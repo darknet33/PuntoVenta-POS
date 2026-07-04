@@ -319,7 +319,10 @@ function cargarHistorial() {
           <td>${v.metodo_pago}</td>
           <td>${v.total} Bs</td>
           <td>${v.estado === "POR_COBRAR" ? '<span style="color:var(--warning);font-weight:600;">Por cobrar</span>' : "Pagado"}</td>
-          <td><button class="btn btn-sm btn-primary" onclick="verDetalle(${v.id})">Ver</button></td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="verDetalle(${v.id})">Ver</button>
+            <button class="btn btn-sm btn-secondary" onclick="mostrarEditarVenta(${v.id})">Editar</button>
+          </td>
         </tr>`;
       });
       document.getElementById("tablaHistorial").innerHTML = html;
@@ -346,6 +349,48 @@ function verDetalle(id) {
       });
       document.getElementById("detalleVenta").innerHTML = html;
     });
+}
+
+function mostrarEditarVenta(id) {
+  fetch("detalle_venta.php?id=" + id)
+    .then(r => r.json())
+    .then(data => {
+      let v = data.venta;
+      document.getElementById("editId").value = v.id;
+      document.getElementById("editVentaId").textContent = v.id;
+      document.getElementById("editCliente").value = v.cliente_nombre || "";
+      document.getElementById(v.metodo_pago === "EFECTIVO" ? "editPagoEfectivo" : "editPagoQR").checked = true;
+      document.getElementById(v.estado === "PAGADO" ? "editEstadoPagado" : "editEstadoPorCobrar").checked = true;
+      document.getElementById("modalEditarVenta").classList.add("show");
+    });
+}
+
+function guardarEditarVenta() {
+  let id = document.getElementById("editId").value;
+  let cliente_nombre = document.getElementById("editCliente").value || null;
+  let metodo_pago = document.querySelector('input[name="editPago"]:checked')?.value;
+  let estado = document.querySelector('input[name="editEstado"]:checked')?.value;
+
+  if (!metodo_pago || !estado) { notify("Complete todos los campos", "error"); return; }
+
+  fetch("editar_venta.php", {
+    method: "POST",
+    body: JSON.stringify({ id, cliente_nombre, metodo_pago, estado })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "ok") {
+        notify("Venta actualizada", "success");
+        cerrarEditarVenta();
+        cargarHistorial();
+      } else {
+        notify("Error al actualizar", "error");
+      }
+    });
+}
+
+function cerrarEditarVenta() {
+  document.getElementById("modalEditarVenta").classList.remove("show");
 }
 
 // ===================== CIERRE DE CAJA (delegado a caja.js) =====================

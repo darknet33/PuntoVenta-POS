@@ -53,6 +53,11 @@ Every change — new endpoint, DB column, feature, or config — must be documen
 - **`cargarHistorial()`** y **`verDetalle()`** en `app.js` muestran las nuevas columnas.
 - **`historial.php`** incluye las columnas Cliente y Estado en la tabla.
 
+## Editar venta desde historial (added 2026-07-04)
+- **`editar_venta.php`** — endpoint POST que UPDATE cliente_nombre, metodo_pago, estado de una venta por id.
+- **`historial.php`** — nuevo botón "Editar" por fila + modal con inputs para cliente, método de pago (EFECTIVO/QR), estado (PAGADO/POR_COBRAR).
+- **`js/app.js`** — `mostrarEditarVenta(id)`: fetch detalle, rellena modal. `guardarEditarVenta()`: POST a editar_venta.php, recarga historial. `cerrarEditarVenta()`: cierra modal.
+
 ## Timezone (America/La_Paz)
 - `config.php` establece `date_default_timezone_set('America/La_Paz')` para PHP.
 - SQLite `CURRENT_TIMESTAMP` y `DATE('now')` usan UTC — **no usarlos**.
