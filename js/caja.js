@@ -409,15 +409,18 @@ function generarPDFDoc(r) {
     bold(14); doc.text("VENTAS", x, y); y += 7;
     let body = [];
     r.ventas.forEach(v => {
+      let estadoStr = v.estado === "POR_COBRAR"
+        ? "Por cobrar" + (v.cliente_nombre ? " - " + v.cliente_nombre : "")
+        : "Pagado";
       (v.detalle || []).forEach(d => {
-        body.push([d.producto || "", String(d.cantidad || 0), parseFloat(d.precio || 0).toFixed(2), parseFloat(d.subtotal || 0).toFixed(2)]);
+        body.push([d.producto || "", String(d.cantidad || 0), parseFloat(d.precio || 0).toFixed(2), parseFloat(d.subtotal || 0).toFixed(2), v.metodo_pago, estadoStr]);
       });
     });
     doc.autoTable({
-      startY: y, head: [["Producto", "Cant.", "Precio", "Subtotal"]], body,
-      theme: "grid", headStyles: { fillColor: [108, 99, 255], fontSize: 9, halign: "center" },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 0: { cellWidth: 70 }, 1: { halign: "center", cellWidth: 20 }, 2: { halign: "right", cellWidth: 30 }, 3: { halign: "right", cellWidth: 30 } },
+      startY: y, head: [["Producto", "Cant.", "Precio", "Subtotal", "Pago", "Estado"]], body,
+      theme: "grid", headStyles: { fillColor: [108, 99, 255], fontSize: 8, halign: "center" },
+      bodyStyles: { fontSize: 7 },
+      columnStyles: { 0: { cellWidth: 55 }, 1: { halign: "center", cellWidth: 16 }, 2: { halign: "right", cellWidth: 22 }, 3: { halign: "right", cellWidth: 22 }, 4: { halign: "center", cellWidth: 18 }, 5: { cellWidth: 35 } },
       margin: { left: x, right: x }
     });
     y = doc.lastAutoTable.finalY + 6;
