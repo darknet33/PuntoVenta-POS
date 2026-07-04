@@ -14,21 +14,21 @@
           <label>Cédula de Identidad</label>
           <input type="text" id="gCedula" placeholder="Cédula de identidad" required>
         </div>
-        <div class="guarda-field">
+        <div class="guarda-field guarda-field-full">
           <label>Equipaje</label>
           <textarea id="gEquipaje" rows="3" placeholder="Detalle del equipaje (artículos, cantidad, etc.)" required></textarea>
         </div>
         <div class="guarda-field">
-          <label>Fecha y Hora de Recojo</label>
+          <label>Fecha de Recojo</label>
           <input type="datetime-local" id="gFechaRecojo" required>
         </div>
         <div class="guarda-field">
-          <label>Monto Pagado (Bs)</label>
+          <label>Monto (Bs)</label>
           <input type="number" id="gMonto" placeholder="0.00" step="0.01" required>
         </div>
-        <div class="guarda-field">
+        <div class="guarda-field guarda-field-full">
           <label>Método de Pago</label>
-          <div class="pago-opciones">
+          <div class="pago-opciones" style="margin:0;">
             <div class="pago-opcion">
               <input type="radio" name="gPago" value="EFECTIVO" id="gPagoEfectivo" checked>
               <label for="gPagoEfectivo">Efectivo</label>
@@ -40,7 +40,7 @@
           </div>
         </div>
       </div>
-      <button type="submit" class="btn btn-secondary w-full" style="margin-top:16px;">Registrar Guarda Equipaje</button>
+      <button type="submit" class="btn btn-secondary w-full" style="margin-top:12px;">Registrar Guarda Equipaje</button>
     </form>
   </div>
 
