@@ -1,0 +1,85 @@
+# PuntoVenta — AGENTS.md
+
+## Stack
+- **Vanilla PHP 7+** (no framework), **SQLite** via PDO, **vanilla JS** (ES6)
+- No package manager, no build step, no tests, no type checking
+
+## Run locally
+```bash
+php -S localhost:8000
+```
+
+## Architecture
+- **`index.php`** — shell. Loads `js/app.js` which fetches PHP views as HTML fragments into `#contenido`
+- **`js/app.js`** — SPA routing via `cargarVista(vista)` → `fetch(vista + ".php")`. Menu buttons trigger this.
+- **`config.php`** — included by every PHP file. Creates DB connection and runs `CREATE TABLE IF NOT EXISTS` for all 5 tables on every request.
+- Views: `ventas.php`, `productos.php`, `historial.php`, `cierre_caja.php`, `guarda_equipaje.php`
+
+## DB (SQLite, `base.db`)
+5 tables: `categorias`, `productos`, `ventas`, `detalle_ventas`, `equipajes`
+- Schema is managed entirely by `config.php` — no migrations.
+- Table creation is idempotent (`IF NOT EXISTS`). Any new column must be added via `ALTER TABLE` manually.
+
+## PHP endpoint patterns
+- **POST** — read JSON: `json_decode(file_get_contents("php://input"), true)`
+- **GET** — query params: `$_GET["param"]`
+- **Response** — always `echo json_encode([...])` with `{"status": "ok"}` or `{"status": "error"}`
+- All CRUD ops follow the same pattern: `include config.php → read input → execute → echo json`.
+- `guardar_venta.php` wraps INSERTs in a transaction (`beginTransaction/commit/rollBack`).
+
+## JS conventions
+- Error handling: `.catch(() => notify("Error de conexión", "error"))` — generic catch-all.
+- Notifications via `notify(msg, tipo)` where tipo is `"success"`, `"error"`, or `"info"`.
+
+## Documentation requirement
+Every change — new endpoint, DB column, feature, or config — must be documented in this file. If it would be useful for a future agent to know, write it down.
+
+## Guarda Equipaje module (added 2026-07-04)
+- **View**: `guarda_equipaje.php` — form (nombre_completo, cedula_identidad, equipaje textarea, fecha_recojo datetime-local, monto, metodo_pago) + history table
+- **Endpoints**:
+  - `guardar_guarda.php` — POST, JSON → INSERT INTO equipajes
+  - `obtener_guardas.php` — GET, returns all rows (or single row if `?id=` param)
+  - `eliminar_guarda.php` — POST, JSON → DELETE by id
+- **Table** `equipajes`: id, nombre_completo, cedula_identidad, equipaje (TEXT), fecha_recojo, monto, metodo_pago, fecha_creacion
+- **Cierre de caja** (`obtener_resumen_caja.php`) now also sums equipaje payments by method (EFECTIVO/QR) for the current day.
+- **JS functions** in `app.js`: `cargarGuardas()`, `guardarGuarda()`, `verDetalleGuarda(id)`, `eliminarGuarda(id)`
+
+## Ventas — descuento, cliente y estado (added 2026-07-04)
+- **Descuento por producto**: cada item del carrito tiene un input `Dto: [__] Bs`. El `precio` que se guarda en `detalle_ventas` es `precio_base - descuento`. El `subtotal` se recalcula con el precio final.
+- **Cliente opcional**: input `#clienteNombre` en el panel del carrito. Se guarda en `ventas.cliente_nombre`.
+- **Estado de pago**: radio buttons `PAGADO` (default) / `POR_COBRAR` en el panel del carrito. Se guarda en `ventas.estado`.
+- **Columnas nuevas** en `ventas`: `cliente_nombre TEXT DEFAULT NULL`, `estado TEXT NOT NULL DEFAULT 'PAGADO'`. Se crean mediante `ALTER TABLE` en `config.php` con `PRAGMA table_info`, idempotente.
+- **`detalle_venta.php`** ahora devuelve `{ venta: {...}, detalle: [...] }` para mostrar cliente, estado y método en el detalle.
+- **`cargarHistorial()`** y **`verDetalle()`** en `app.js` muestran las nuevas columnas.
+- **`historial.php`** incluye las columnas Cliente y Estado en la tabla.
+
+## Timezone (America/La_Paz)
+- `config.php` establece `date_default_timezone_set('America/La_Paz')` para PHP.
+- SQLite `CURRENT_TIMESTAMP` y `DATE('now')` usan UTC — **no usarlos**.
+- Todas las fechas se insertan desde PHP con `date("Y-m-d H:i:s")`:
+  - `guardar_venta.php` — `$ahora` para `ventas.fecha`
+  - `guardar_guarda.php` — `$ahora` para `equipajes.fecha_creacion`
+- Todas las consultas de fecha (ej: cierre de caja) usan `date("Y-m-d")` bindeado como parámetro, no `DATE('now')`.
+
+## UI redesign — Tab bar + layout optimization (added 2026-07-04)
+- **`index.php`** — redesigned with fixed bottom tab bar (`<nav class="tabbar">`). 5 tabs: Productos, Historial, Ventas (centered, larger icon), Guarda Eq., Cierre. Each tab uses `data-view` attribute for routing.
+- **`js/app.js`** — `setActiveMenu()` replaced by `setActiveTab(id)`. Tab clicks use generic `querySelectorAll(".tab")` loop reading `dataset.view`. New `btnCierre` handler for Cierre de Caja. Added `toggleClearBtn(input)` and `limpiarBusqueda(id, callback)` for search clear buttons.
+- **`css/style.css`** — removed old `.menu` styles. New `.tabbar`, `.tab`, `.tab-center` classes. Tab bar is fixed bottom with `backdrop-filter: blur(20px)`, safe-area padding, centered active tab with top indicator dot. New `.search-wrapper` / `.search-clear` for search inputs with clear button.
+- **Guarda Equipaje form** — layout optimized for vertical (mobile): form fields stack vertically, textarea has `min-height: 80px`, removed `guarda-field-full` grid class, simplified responsive breakpoints. Form panel has `max-width: 480px` and `justify-self: end` on desktop to prevent horizontal stretching.
+- **Search clear button** — `.search-clear` button appears inside search inputs when text is present (`.has-text` class toggled by JS). For `ventas.php` (`#buscarProducto`) and `productos.php` (`#buscador`). Clears value and re-triggers search callback.
+- **General responsive** — `.app` wrapper replaces `.contenedor`, has padding-bottom for tab bar clearance. Mobile padding reduced to 12px.
+
+## Módulo Caja — Inicio, Reporte y Cierre (added 2026-07-04)
+- **`config.php`** — nueva tabla `caja`: id, fecha_inicio, turno, encargado, monto_inicial, fecha_cierre, estado (ABIERTA/CERRADA), cortes (corte_200..corte_01), qr_real, total_cortes, diferencia
+- **`index.php`** — tab "Cierre" renombrado a "Caja"; carga `js/caja.js`
+- **Nuevos endpoints**:
+  - `guardar_apertura_caja.php` — POST, crea o actualiza apertura de caja (si tiene `id` UPDATE, si no INSERT). Valida que no haya otra caja abierta.
+  - `obtener_caja_actual.php` — GET, devuelve la caja ABIERTA (con totales de ventas/equipajes desde `fecha_inicio`) o `{caja: null}`
+  - `cerrar_caja.php` — POST, guarda cortes, calcula `total_cortes` y `diferencia = total_cortes - efectivo_esperado`, cierra la caja
+- **`obtener_reporte_completo.php`** — ahora recibe `?caja_id=X`, filtra ventas y equipajes desde `fecha_inicio` de esa caja (no por día calendario). Devuelve también datos de la caja.
+- **`cierre_caja.php`** — rediseñado con 3 secciones:
+  1. **Inicio de Caja**: formulario (fecha_inicio, turno, encargado, monto_inicial) si no hay caja abierta; resumen + botón editar si hay
+  2. **Reporte / Consulta**: botón "Vista Previa PDF" que abre modal con iframe del PDF
+  3. **Cierre de Caja**: tarjetas resumen (Ventas EF/QR, Guarda Eq EF/QR, Monto Inicial, Efectivo Esperado) + tabla de cortes (200,100,50,20,10,5,2,1,0.5,0.2,0.1 Bs) + QR Real + "Calcular Cierre" + "Cerrar Caja y Generar PDF Final"
+- **`js/caja.js`** (nuevo, separado de app.js) — funciones: `cargarCierre()`, `cargarCajaActual()`, `renderInicioCajaForm()`, `renderCajaAbierta()`, `renderCierreSection()`, `abrirCaja()`, `actualizarApertura()`, `editarApertura()`, `calcularCortes()`, `calcularCierre()`, `cerrarCaja()`, `vistaPreviaPDF()`, `descargarPDF()`, `cerrarModalPdf()`, `generarPDFFinal()`, `generarPDFDoc()` (compartida para preview y cierre)
+- **CSS**: nuevas clases `.caja-badge`, `.caja-form-grid`, `.caja-info-grid`, `.caja-info-item`, `.cortes-grid`, `.cortes-row`, `.cortes-input`, `.cortes-subtotal`, `.cortes-total`, `.modal-pdf`, `.modal-pdf-header`, `.modal-pdf-footer`

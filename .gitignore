@@ -1,0 +1,34 @@
+# Database
+
+
+# Environment
+.env
+.env.local
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# MCP / Skills / Agent config
+.mcp/
+.agents/
+skills/
+opencode.json
+opencode.jsonc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# PHP
+vendor/
+composer.lock
+
+# Temp
+temp/
+tmp/
+*.tmp
