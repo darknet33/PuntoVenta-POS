@@ -798,112 +798,7 @@ table tbody tr:last-child td {
 
 
 
-/* ===== GUARDA EQUIPAJE ===== */
-.guarda-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
-  align-items: start;
-}
-
-.guarda-form-panel {
-  width: 100%;
-}
-
-@media (min-width: 768px) {
-  .guarda-layout {
-    grid-template-columns: 1fr 1.5fr;
-  }
-}
-
-.guarda-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.guarda-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.guarda-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.guarda-field-full {
-  grid-column: 1 / -1;
-}
-
-.guarda-field label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.guarda-field textarea {
-  width: 100%;
-  padding: 10px 14px;
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: var(--blur-md);
-  -webkit-backdrop-filter: var(--blur-md);
-  color: var(--text-primary);
-  transition: var(--transition);
-  outline: none;
-  resize: vertical;
-  min-height: 80px;
-}
-
-.guarda-field textarea:focus {
-  border-color: var(--primary);
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
-}
-
-.guarda-field input {
-  padding: 10px 14px;
-}
-
-#detalleGuarda {
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  margin-top: 12px;
-}
-
-#detalleGuarda h3 {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 12px;
-  color: var(--primary);
-}
-
-#detalleGuarda p {
-  margin: 6px 0;
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-@media (max-width: 600px) {
-  .guarda-form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ===== RESPONSIVE ===== */
+/* ===== TOAST ===== */
 @media (max-width: 768px) {
   .app {
     padding: 12px 12px 80px;
@@ -928,9 +823,28 @@ table tbody tr:last-child td {
     position: static;
   }
 
-  .guarda-layout {
-    gap: 16px;
-  }
+}
+
+/* ===== DETALLE GUARDA ===== */
+#detalleGuarda {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  margin-top: 12px;
+}
+
+#detalleGuarda h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--primary);
+}
+
+#detalleGuarda p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: var(--text-primary);
 }
 
 /* ===== TOAST ===== */
