@@ -110,3 +110,11 @@ Every change — new endpoint, DB column, feature, or config — must be documen
   - `detalle_compras`: id, compra_id, producto_id, producto, cantidad, costo, subtotal
 - **`index.php`** — nuevo tab "Compras" 📥 entre Productos e Historial (6 tabs total).
 - **`js/app.js`** — nuevas funciones: `buscarProductosCompra()`, `agregarCarritoCompra(p)`, `renderCarritoCompra()`, `actualizarCostoCompra()`, `eliminarItemCompra()`, `finalizarCompra()`, `cargarCompras()`, `eliminarCompra(id)`. Variable global `carritoCompra` separada de `carrito`.
+
+## Venta/Compra por paquete (added 2026-07-09)
+- **Columna `unidades_por_paquete`** en `productos`: `INTEGER NOT NULL DEFAULT 1`. Si vale 1, el producto se vende individualmente. Si > 1, se vende por paquetes.
+- **Toggle "Venta/Compra por paquete"**: switch en ventas.php y compras.php. OFF → comportamiento normal (1 clic = 1 unidad). ON → clic en productos con paquete muestra mini-formulario para elegir cantidad de paquetes.
+- **Mini-formulario**: aparece debajo de la card con input de cantidad de paquetes, botón "Agregar", y total de unidades calculado en tiempo real.
+- **Stock**: descuenta/suma por unidades totales (no por paquetes).
+- **Carrito**: los items de paquete muestran `Cant: 24 (2 paq. x12) a 25 Bs`.
+- **CSS**: `.switch`, `.slider`, `.toggle-paquete`, `.mini-form-paquete`, `.producto-pack`, `.con-mini-form`.

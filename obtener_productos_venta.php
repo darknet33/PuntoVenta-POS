@@ -4,7 +4,7 @@ include("config.php");
 $q = $_GET['q'] ?? '';
 
 $stmt = $db->prepare("
-SELECT p.id, p.producto, p.precio_detalle AS precio, p.stock, c.nombre AS categoria
+SELECT p.id, p.producto, p.precio_detalle AS precio, p.stock, p.unidades_por_paquete, c.nombre AS categoria
 FROM productos p
 LEFT JOIN categorias c ON c.id = p.categoria_id
 WHERE p.producto LIKE :q

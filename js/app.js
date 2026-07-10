@@ -105,7 +105,8 @@ function cargarProductos() {
               data-categoria-id="${p.categoria_id}"
               data-producto="${p.producto}"
               data-precio="${p.precio_detalle}"
-              data-stock="${p.stock}">Editar</button>
+              data-stock="${p.stock}"
+              data-unidades-por-paquete="${p.unidades_por_paquete}">Editar</button>
             <button class="btn btn-sm btn-danger" onclick="eliminar(${p.id})">Eliminar</button>
           </td>
         </tr>`;
@@ -133,6 +134,7 @@ function limpiar() {
   document.getElementById("producto").value = "";
   document.getElementById("precio").value = "";
   document.getElementById("stock").value = "0";
+  document.getElementById("unidadesPorPaquete").value = "1";
   modo = "nuevo";
 }
 
@@ -144,7 +146,8 @@ function guardarProducto() {
     categoria_id: catId,
     producto: document.getElementById("producto").value,
     precio: document.getElementById("precio").value,
-    stock: document.getElementById("stock").value
+    stock: document.getElementById("stock").value,
+    unidades_por_paquete: document.getElementById("unidadesPorPaquete").value
   };
   let url = modo === "nuevo" ? "guardar_productos.php" : "editar_productos.php";
   let label = modo === "nuevo" ? "guardado" : "actualizado";
@@ -174,6 +177,7 @@ function editarProducto(btn) {
   document.getElementById("producto").value = btn.dataset.producto;
   document.getElementById("precio").value = btn.dataset.precio;
   document.getElementById("stock").value = btn.dataset.stock || 0;
+  document.getElementById("unidadesPorPaquete").value = btn.dataset.unidadesPorPaquete || 1;
   setTimeout(() => {
     let sel = document.getElementById("categoria");
     sel.value = btn.dataset.categoriaId;
@@ -201,6 +205,7 @@ function eliminar(id) {
 // ===================== VENTAS (POS) =====================
 function buscarProductos() {
   let q = document.getElementById("buscarProducto").value;
+  let paqueteOn = document.getElementById("togglePaquete")?.checked;
   fetch("obtener_productos_venta.php?q=" + q)
     .then(r => r.json())
     .then(data => {
@@ -208,14 +213,42 @@ function buscarProductos() {
       data.forEach(p => {
         let sinStock = p.stock <= 0;
         let stockCls = sinStock ? "stock-empty" : (p.stock <= 5 ? "stock-low" : "");
-        let clickAttr = sinStock ? "" : `onclick='agregarCarrito(${JSON.stringify(p)})'`;
-        html += `<div class="producto-card ${sinStock ? 'sin-stock' : ''}" ${clickAttr}>
+        let esPaquete = p.unidades_por_paquete > 1;
+        let packHtml = esPaquete ? `<div class="producto-pack">Pack: x${p.unidades_por_paquete} uds</div>` : "";
+        let miniForm = "";
+        if (!sinStock && paqueteOn && esPaquete) {
+          miniForm = `<div class="mini-form-paquete" onclick="event.stopPropagation()">
+            <span>Cant. paquetes:</span>
+            <input type="number" id="miniPaq_${p.id}" value="1" min="1" max="${Math.floor(p.stock / p.unidades_por_paquete)}">
+            <button class="btn btn-sm btn-primary" onclick="agregarCarritoPaquete(${JSON.stringify(p)}, document.getElementById('miniPaq_${p.id}').value)">Agregar</button>
+            <span class="mini-form-total" id="miniTotal_${p.id}">= ${p.unidades_por_paquete} uds</span>
+          </div>`;
+        }
+        let clickAttr = sinStock ? "" : (paqueteOn && esPaquete ? "" : `onclick='agregarCarrito(${JSON.stringify(p)})'`);
+        html += `<div class="producto-card ${sinStock ? 'sin-stock' : ''} ${paqueteOn && esPaquete ? 'con-mini-form' : ''}" ${clickAttr}>
           <div class="producto-nombre">${p.producto}</div>
           <div class="producto-precio">${p.precio} Bs</div>
           <div class="producto-stock ${stockCls}">Stock: ${p.stock}</div>
+          ${packHtml}
+          ${miniForm}
         </div>`;
       });
       document.getElementById("resultados").innerHTML = html;
+      if (paqueteOn) {
+        data.forEach(p => {
+          if (p.unidades_por_paquete > 1) {
+            let inp = document.getElementById("miniPaq_" + p.id);
+            let tot = document.getElementById("miniTotal_" + p.id);
+            if (inp && tot) {
+              inp.addEventListener("input", function() {
+                let maxP = Math.floor(p.stock / p.unidades_por_paquete);
+                let val = Math.min(parseInt(this.value) || 1, maxP);
+                tot.textContent = "= " + (val * p.unidades_por_paquete) + " uds";
+              });
+            }
+          }
+        });
+      }
     });
 }
 
@@ -239,9 +272,57 @@ function agregarCarrito(p) {
       precio: parseFloat(p.precio),
       cantidad: 1,
       descuento: 0,
-      stock: p.stock
+      stock: p.stock,
+      unidades_por_paquete: p.unidades_por_paquete || 1,
+      esPaquete: false
     });
     notify(p.producto + " agregado", "info");
+  }
+  renderCarrito();
+}
+
+function agregarCarritoPaquete(p, paquetes) {
+  paquetes = parseInt(paquetes) || 1;
+  let unidades = paquetes * p.unidades_por_paquete;
+  if (p.stock <= 0) {
+    notify("Sin stock: " + p.producto, "error");
+    return;
+  }
+  if (unidades > p.stock) {
+    notify("Stock insuficiente: " + p.producto + " (disponible: " + p.stock + ")", "error");
+    return;
+  }
+  let item = carrito.find(i => i.id == p.id && i.esPaquete);
+  if (item) {
+    let nuevaCant = item.cantidad + unidades;
+    if (nuevaCant > p.stock) {
+      notify("Stock insuficiente: " + p.producto + " (disponible: " + p.stock + ")", "error");
+      return;
+    }
+    item.cantidad = nuevaCant;
+    item.paquetes += paquetes;
+    notify(p.producto + " — " + item.paquetes + " paquetes (" + item.cantidad + " uds)", "info");
+  } else {
+    let existente = carrito.find(i => i.id == p.id && !i.esPaquete);
+    if (existente) {
+      existente.cantidad += unidades;
+      existente.esPaquete = false;
+      existente.paquetes = 0;
+      notify(p.producto + " — " + existente.cantidad + " uds", "info");
+    } else {
+      carrito.push({
+        id: p.id,
+        producto: p.producto,
+        precio: parseFloat(p.precio),
+        cantidad: unidades,
+        descuento: 0,
+        stock: p.stock,
+        unidades_por_paquete: p.unidades_por_paquete,
+        esPaquete: true,
+        paquetes: paquetes
+      });
+      notify(p.producto + " — " + paquetes + " paquetes (" + unidades + " uds)", "info");
+    }
   }
   renderCarrito();
 }
@@ -253,10 +334,13 @@ function renderCarrito() {
     let precio_final = p.precio - p.descuento;
     let subtotal = precio_final * p.cantidad;
     total += subtotal;
+    let detalleCant = p.esPaquete
+      ? `Cant: ${p.cantidad} (${p.paquetes} paq. x${p.unidades_por_paquete}) a ${p.precio} Bs`
+      : `Cant: ${p.cantidad} x ${p.precio} Bs`;
     html += `<div class="carrito-item">
       <div class="item-info">
         <span class="item-nombre">${p.producto}</span>
-        <span class="item-detalle">Cant: ${p.cantidad} x ${p.precio} Bs</span>
+        <span class="item-detalle">${detalleCant}</span>
         <div class="item-descuento">
           <label>Dto:</label>
           <input type="number" class="descuento-input" value="${p.descuento}"
@@ -513,17 +597,46 @@ let carritoCompra = [];
 
 function buscarProductosCompra() {
   let q = document.getElementById("buscarProductoCompra").value;
+  let paqueteOn = document.getElementById("togglePaqueteCompra")?.checked;
   fetch("obtener_productos_venta.php?q=" + q)
     .then(r => r.json())
     .then(data => {
       let html = "";
       data.forEach(p => {
-        html += `<div class="producto-card" onclick='agregarCarritoCompra(${JSON.stringify(p)})'>
+        let esPaquete = p.unidades_por_paquete > 1;
+        let packHtml = esPaquete ? `<div class="producto-pack">Pack: x${p.unidades_por_paquete} uds</div>` : "";
+        let miniForm = "";
+        if (paqueteOn && esPaquete) {
+          miniForm = `<div class="mini-form-paquete" onclick="event.stopPropagation()">
+            <span>Cant. paquetes:</span>
+            <input type="number" id="miniPaqCompra_${p.id}" value="1" min="1">
+            <button class="btn btn-sm btn-primary" onclick="agregarCarritoCompraPaquete(${JSON.stringify(p)}, document.getElementById('miniPaqCompra_${p.id}').value)">Agregar</button>
+            <span class="mini-form-total" id="miniTotalCompra_${p.id}">= ${p.unidades_por_paquete} uds</span>
+          </div>`;
+        }
+        let clickAttr = paqueteOn && esPaquete ? "" : `onclick='agregarCarritoCompra(${JSON.stringify(p)})'`;
+        html += `<div class="producto-card ${paqueteOn && esPaquete ? 'con-mini-form' : ''}" ${clickAttr}>
           <div class="producto-nombre">${p.producto}</div>
           <div class="producto-precio">Stock: ${p.stock}</div>
+          ${packHtml}
+          ${miniForm}
         </div>`;
       });
       document.getElementById("resultadosCompra").innerHTML = html;
+      if (paqueteOn) {
+        data.forEach(p => {
+          if (p.unidades_por_paquete > 1) {
+            let inp = document.getElementById("miniPaqCompra_" + p.id);
+            let tot = document.getElementById("miniTotalCompra_" + p.id);
+            if (inp && tot) {
+              inp.addEventListener("input", function() {
+                let val = Math.max(parseInt(this.value) || 1, 1);
+                tot.textContent = "= " + (val * p.unidades_por_paquete) + " uds";
+              });
+            }
+          }
+        });
+      }
     });
 }
 
@@ -541,6 +654,24 @@ function agregarCarritoCompra(p) {
   }
   renderCarritoCompra();
   notify(p.producto + " agregado al carrito de compras", "info");
+}
+
+function agregarCarritoCompraPaquete(p, paquetes) {
+  paquetes = parseInt(paquetes) || 1;
+  let unidades = paquetes * p.unidades_por_paquete;
+  let item = carritoCompra.find(i => i.id == p.id);
+  if (item) {
+    item.cantidad += unidades;
+  } else {
+    carritoCompra.push({
+      id: p.id,
+      producto: p.producto,
+      cantidad: unidades,
+      costo: 0
+    });
+  }
+  renderCarritoCompra();
+  notify(p.producto + " — " + paquetes + " paquetes (" + unidades + " uds)", "info");
 }
 
 function renderCarritoCompra() {

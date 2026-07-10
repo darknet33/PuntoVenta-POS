@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS productos (
     producto TEXT NOT NULL,
     precio_detalle REAL NOT NULL,
     stock INTEGER NOT NULL DEFAULT 0,
+    unidades_por_paquete INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (categoria_id) REFERENCES categorias(id)
 );
 
@@ -103,4 +104,7 @@ if (!in_array("estado", $cols)) {
 $prodCols = $db->query("PRAGMA table_info(productos)")->fetchAll(PDO::FETCH_COLUMN, 1);
 if (!in_array("stock", $prodCols)) {
     $db->exec("ALTER TABLE productos ADD COLUMN stock INTEGER NOT NULL DEFAULT 0");
+}
+if (!in_array("unidades_por_paquete", $prodCols)) {
+    $db->exec("ALTER TABLE productos ADD COLUMN unidades_por_paquete INTEGER NOT NULL DEFAULT 1");
 }

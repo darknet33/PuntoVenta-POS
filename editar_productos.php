@@ -8,7 +8,8 @@ UPDATE productos
 SET categoria_id=:categoria_id,
     producto=:producto,
     precio_detalle=:precio,
-    stock=:stock
+    stock=:stock,
+    unidades_por_paquete=:unidades_por_paquete
 WHERE id=:id
 ");
 
@@ -17,7 +18,8 @@ $stmt->execute([
     ":categoria_id" => $data["categoria_id"],
     ":producto" => $data["producto"],
     ":precio" => $data["precio"],
-    ":stock" => $data["stock"] ?? 0
+    ":stock" => $data["stock"] ?? 0,
+    ":unidades_por_paquete" => $data["unidades_por_paquete"] ?? 1
 ]);
 
 echo json_encode(["status" => "ok"]);

@@ -9,6 +9,13 @@
         <input type="text" id="buscarProductoCompra" placeholder="Buscar producto..." onkeyup="buscarProductosCompra(); toggleClearBtn(this)">
         <button class="search-clear" onclick="limpiarBusqueda('buscarProductoCompra', buscarProductosCompra)">&times;</button>
       </div>
+      <div class="toggle-paquete">
+        <label class="switch">
+          <input type="checkbox" id="togglePaqueteCompra" onchange="buscarProductosCompra()">
+          <span class="slider"></span>
+        </label>
+        <span class="toggle-label">Compra por paquete</span>
+      </div>
       <div id="resultadosCompra" class="productos-grid"></div>
     </div>
   </div>
