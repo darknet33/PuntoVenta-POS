@@ -88,3 +88,25 @@ Every change — new endpoint, DB column, feature, or config — must be documen
   3. **Cierre de Caja**: tarjetas resumen (Ventas EF/QR, Guarda Eq EF/QR, Monto Inicial, Efectivo Esperado) + tabla de cortes (200,100,50,20,10,5,2,1,0.5,0.2,0.1 Bs) + QR Real + "Calcular Cierre" + "Cerrar Caja y Generar PDF Final"
 - **`js/caja.js`** (nuevo, separado de app.js) — funciones: `cargarCierre()`, `cargarCajaActual()`, `renderInicioCajaForm()`, `renderCajaAbierta()`, `renderCierreSection()`, `abrirCaja()`, `actualizarApertura()`, `editarApertura()`, `calcularCortes()`, `calcularCierre()`, `cerrarCaja()`, `vistaPreviaPDF()`, `descargarPDF()`, `cerrarModalPdf()`, `generarPDFFinal()`, `generarPDFDoc()` (compartida para preview y cierre)
 - **CSS**: nuevas clases `.caja-badge`, `.caja-form-grid`, `.caja-info-grid`, `.caja-info-item`, `.cortes-grid`, `.cortes-row`, `.cortes-input`, `.cortes-subtotal`, `.cortes-total`, `.modal-pdf`, `.modal-pdf-header`, `.modal-pdf-footer`
+
+## Stock management (added 2026-07-09)
+- **Columna `stock`** en `productos`: `INTEGER NOT NULL DEFAULT 0`. Agregada vía `ALTER TABLE` idempotente en `config.php` con `PRAGMA table_info`.
+- **`guardar_productos.php`** y **`editar_productos.php`** — aceptan y guardan campo `stock`.
+- **`obtener_productos.php`** — SELECT incluye `p.stock`.
+- **`obtener_productos_venta.php`** — SELECT incluye `p.stock`.
+- **`guardar_venta.php`** — dentro de la transaction, valida `stock >= cantidad` antes de cada item. Si stock insuficiente, lanza Exception y hace rollback. Si OK, ejecuta `UPDATE productos SET stock = stock - :cantidad WHERE id = :id`.
+- **Ventas (POS)** — `buscarProductos()` muestra stock en cada card. Si `stock = 0`, card gris con clase `sin-stock` y sin `onclick`. Si `stock <= 5`, texto naranja (`.stock-low`). `agregarCarrito()` valida stock antes de agregar.
+- **Productos admin** — tabla incluye columna Stock con `.stock-badge`. Modal de editar incluye campo Stock.
+- **CSS**: `.stock-badge`, `.stock-badge.stock-low`, `.stock-badge.stock-empty`, `.producto-card.sin-stock`, `.producto-stock`
+
+## Módulo Compras (added 2026-07-09)
+- **View**: `compras.php` — layout similar a ventas: búsqueda de productos + carrito de compras (producto, cantidad, costo unitario) + método de pago (EFECTIVO/QR) + historial de compras
+- **Endpoints**:
+  - `guardar_compra.php` — POST, JSON → INSERT en `compras` + `detalle_compras` (dentro de transaction). Por cada item: `UPDATE productos SET stock = stock + :cantidad`.
+  - `obtener_compras.php` — GET, retorna historial con `GROUP_CONCAT` de productos.
+  - `eliminar_compra.php` — POST, JSON → DELETE compra + detalle, revierte stock (`UPDATE productos SET stock = stock - :cantidad`).
+- **Tablas nuevas**:
+  - `compras`: id, fecha, metodo_pago, total
+  - `detalle_compras`: id, compra_id, producto_id, producto, cantidad, costo, subtotal
+- **`index.php`** — nuevo tab "Compras" 📥 entre Productos e Historial (6 tabs total).
+- **`js/app.js`** — nuevas funciones: `buscarProductosCompra()`, `agregarCarritoCompra(p)`, `renderCarritoCompra()`, `actualizarCostoCompra()`, `eliminarItemCompra()`, `finalizarCompra()`, `cargarCompras()`, `eliminarCompra(id)`. Variable global `carritoCompra` separada de `carrito`.

@@ -55,6 +55,7 @@ function cargarVista(vista) {
       if (vista === "historial") cargarHistorial();
       if (vista === "cierre_caja") cargarCierre();
       if (vista === "guarda_equipaje") cargarGuardas();
+      if (vista === "compras") cargarCompras();
     });
 }
 
@@ -90,18 +91,21 @@ function cargarProductos() {
     .then(data => {
       let html = "";
       data.forEach(p => {
+        let stockCls = p.stock <= 0 ? "stock-empty" : (p.stock <= 5 ? "stock-low" : "");
         html += `<tr>
           <td>${p.id}</td>
           <td>${p.categoria}</td>
           <td>${p.producto}</td>
           <td>${p.precio_detalle}</td>
+          <td><span class="stock-badge ${stockCls}">${p.stock}</span></td>
           <td>
             <button class="btn btn-sm btn-primary"
               onclick="editarProducto(this)"
               data-id="${p.id}"
               data-categoria-id="${p.categoria_id}"
               data-producto="${p.producto}"
-              data-precio="${p.precio_detalle}">Editar</button>
+              data-precio="${p.precio_detalle}"
+              data-stock="${p.stock}">Editar</button>
             <button class="btn btn-sm btn-danger" onclick="eliminar(${p.id})">Eliminar</button>
           </td>
         </tr>`;
@@ -128,6 +132,7 @@ function limpiar() {
   sel.dataset.cargado = "";
   document.getElementById("producto").value = "";
   document.getElementById("precio").value = "";
+  document.getElementById("stock").value = "0";
   modo = "nuevo";
 }
 
@@ -138,7 +143,8 @@ function guardarProducto() {
     id: document.getElementById("id").value,
     categoria_id: catId,
     producto: document.getElementById("producto").value,
-    precio: document.getElementById("precio").value
+    precio: document.getElementById("precio").value,
+    stock: document.getElementById("stock").value
   };
   let url = modo === "nuevo" ? "guardar_productos.php" : "editar_productos.php";
   let label = modo === "nuevo" ? "guardado" : "actualizado";
@@ -167,6 +173,7 @@ function editarProducto(btn) {
   document.getElementById("categoria_id").value = btn.dataset.categoriaId;
   document.getElementById("producto").value = btn.dataset.producto;
   document.getElementById("precio").value = btn.dataset.precio;
+  document.getElementById("stock").value = btn.dataset.stock || 0;
   setTimeout(() => {
     let sel = document.getElementById("categoria");
     sel.value = btn.dataset.categoriaId;
@@ -199,9 +206,13 @@ function buscarProductos() {
     .then(data => {
       let html = "";
       data.forEach(p => {
-        html += `<div class="producto-card" onclick='agregarCarrito(${JSON.stringify(p)})'>
+        let sinStock = p.stock <= 0;
+        let stockCls = sinStock ? "stock-empty" : (p.stock <= 5 ? "stock-low" : "");
+        let clickAttr = sinStock ? "" : `onclick='agregarCarrito(${JSON.stringify(p)})'`;
+        html += `<div class="producto-card ${sinStock ? 'sin-stock' : ''}" ${clickAttr}>
           <div class="producto-nombre">${p.producto}</div>
           <div class="producto-precio">${p.precio} Bs</div>
+          <div class="producto-stock ${stockCls}">Stock: ${p.stock}</div>
         </div>`;
       });
       document.getElementById("resultados").innerHTML = html;
@@ -209,8 +220,16 @@ function buscarProductos() {
 }
 
 function agregarCarrito(p) {
+  if (p.stock <= 0) {
+    notify("Sin stock: " + p.producto, "error");
+    return;
+  }
   let item = carrito.find(i => i.id == p.id);
   if (item) {
+    if (item.cantidad >= p.stock) {
+      notify("Stock insuficiente: " + p.producto + " (disponible: " + p.stock + ")", "error");
+      return;
+    }
     item.cantidad++;
     notify(p.producto + " x" + item.cantidad, "info");
   } else {
@@ -219,7 +238,8 @@ function agregarCarrito(p) {
       producto: p.producto,
       precio: parseFloat(p.precio),
       cantidad: 1,
-      descuento: 0
+      descuento: 0,
+      stock: p.stock
     });
     notify(p.producto + " agregado", "info");
   }
@@ -481,6 +501,156 @@ function eliminarGuarda(id) {
       if (res.status === "ok") {
         notify("Registro eliminado", "success");
         cargarGuardas();
+      } else {
+        notify("Error al eliminar", "error");
+      }
+    })
+    .catch(() => notify("Error de conexión", "error"));
+}
+
+// ===================== COMPRAS =====================
+let carritoCompra = [];
+
+function buscarProductosCompra() {
+  let q = document.getElementById("buscarProductoCompra").value;
+  fetch("obtener_productos_venta.php?q=" + q)
+    .then(r => r.json())
+    .then(data => {
+      let html = "";
+      data.forEach(p => {
+        html += `<div class="producto-card" onclick='agregarCarritoCompra(${JSON.stringify(p)})'>
+          <div class="producto-nombre">${p.producto}</div>
+          <div class="producto-precio">Stock: ${p.stock}</div>
+        </div>`;
+      });
+      document.getElementById("resultadosCompra").innerHTML = html;
+    });
+}
+
+function agregarCarritoCompra(p) {
+  let item = carritoCompra.find(i => i.id == p.id);
+  if (item) {
+    item.cantidad++;
+  } else {
+    carritoCompra.push({
+      id: p.id,
+      producto: p.producto,
+      cantidad: 1,
+      costo: 0
+    });
+  }
+  renderCarritoCompra();
+  notify(p.producto + " agregado al carrito de compras", "info");
+}
+
+function renderCarritoCompra() {
+  let html = "";
+  let total = 0;
+  carritoCompra.forEach((p, index) => {
+    let subtotal = p.costo * p.cantidad;
+    total += subtotal;
+    html += `<div class="carrito-item">
+      <div class="item-info">
+        <span class="item-nombre">${p.producto}</span>
+        <span class="item-detalle">Cant: ${p.cantidad}</span>
+        <div class="item-descuento">
+          <label>Costo:</label>
+          <input type="number" class="descuento-input" value="${p.costo}"
+            onchange="actualizarCostoCompra(${index}, this.value)" min="0" step="0.01">
+          <label>Bs</label>
+        </div>
+      </div>
+      <div class="item-acciones">
+        <span class="item-subtotal">${subtotal} Bs</span>
+        <button class="btn-eliminar-item" onclick="eliminarItemCompra(${index})">&times;</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById("carritoCompra").innerHTML = html;
+  document.getElementById("totalCompra").innerText = total;
+}
+
+function actualizarCostoCompra(index, valor) {
+  let c = parseFloat(valor) || 0;
+  if (c < 0) c = 0;
+  carritoCompra[index].costo = c;
+  renderCarritoCompra();
+}
+
+function eliminarItemCompra(i) {
+  let nombre = carritoCompra[i].producto;
+  carritoCompra.splice(i, 1);
+  renderCarritoCompra();
+  notify(nombre + " eliminado del carrito", "info");
+}
+
+function finalizarCompra() {
+  if (carritoCompra.length === 0) {
+    notify("El carrito está vacío", "error");
+    return;
+  }
+  for (let item of carritoCompra) {
+    if (item.costo <= 0) {
+      notify("Ingrese el costo para: " + item.producto, "error");
+      return;
+    }
+  }
+  let metodo = document.querySelector('input[name="pagoCompra"]:checked').value;
+  let total = document.getElementById("totalCompra").innerText;
+  fetch("guardar_compra.php", {
+    method: "POST",
+    body: JSON.stringify({
+      metodo_pago: metodo,
+      carrito: carritoCompra,
+      total: total
+    })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "ok") {
+        notify("Compra registrada — Total: " + total + " Bs", "success");
+        carritoCompra = [];
+        renderCarritoCompra();
+        cargarCompras();
+      } else {
+        notify("Error al registrar compra", "error");
+      }
+    })
+    .catch(() => notify("Error de conexión", "error"));
+}
+
+function cargarCompras() {
+  fetch("obtener_compras.php")
+    .then(r => r.json())
+    .then(data => {
+      let html = "";
+      data.forEach(c => {
+        html += `<tr>
+          <td>${c.id}</td>
+          <td>${c.fecha}</td>
+          <td>${c.productos || "-"}</td>
+          <td>${c.total} Bs</td>
+          <td>${c.metodo_pago}</td>
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="eliminarCompra(${c.id})">Eliminar</button>
+          </td>
+        </tr>`;
+      });
+      document.getElementById("tablaCompras").innerHTML = html;
+    });
+}
+
+function eliminarCompra(id) {
+  if (!confirm("¿Eliminar esta compra? Se revertirá el stock.")) return;
+  fetch("eliminar_compra.php", {
+    method: "POST",
+    body: JSON.stringify({ id })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "ok") {
+        notify("Compra eliminada y stock revertido", "success");
+        cargarCompras();
       } else {
         notify("Error al eliminar", "error");
       }

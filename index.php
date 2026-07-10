@@ -18,6 +18,10 @@
       <span class="tab-icon">📦</span>
       <span class="tab-label">Productos</span>
     </button>
+    <button class="tab" id="btnCompras" data-view="compras">
+      <span class="tab-icon">📥</span>
+      <span class="tab-label">Compras</span>
+    </button>
     <button class="tab" id="btnHistorial" data-view="historial">
       <span class="tab-icon">📋</span>
       <span class="tab-label">Historial</span>

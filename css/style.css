@@ -1249,3 +1249,52 @@ table tbody tr:last-child td {
   border-color: var(--warning);
   box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.15);
 }
+
+/* ===== STOCK ===== */
+.stock-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(0, 212, 170, 0.15);
+  color: var(--secondary);
+}
+
+.stock-badge.stock-low {
+  background: rgba(255, 179, 71, 0.15);
+  color: var(--warning);
+}
+
+.stock-badge.stock-empty {
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--danger);
+}
+
+.producto-card .producto-stock {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 6px;
+  color: var(--secondary);
+}
+
+.producto-card .producto-stock.stock-low {
+  color: var(--warning);
+}
+
+.producto-card .producto-stock.stock-empty {
+  color: var(--danger);
+}
+
+.producto-card.sin-stock {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* ===== CARRITO COMPRAS ===== */
+#carritoCompra {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

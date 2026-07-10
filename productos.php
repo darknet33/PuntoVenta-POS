@@ -19,6 +19,7 @@
           <th>Categoría</th>
           <th>Producto</th>
           <th>Precio</th>
+          <th>Stock</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -37,6 +38,7 @@
     </select>
     <input type="text" id="producto" placeholder="Producto">
     <input type="number" id="precio" placeholder="Precio" step="0.01">
+    <input type="number" id="stock" placeholder="Stock" min="0" value="0">
     <div class="modal-buttons">
       <button class="btn btn-primary" onclick="guardarProducto()">Guardar</button>
       <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>

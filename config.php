@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS productos (
     categoria_id INTEGER,
     producto TEXT NOT NULL,
     precio_detalle REAL NOT NULL,
+    stock INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (categoria_id) REFERENCES categorias(id)
 );
 
@@ -71,6 +72,24 @@ CREATE TABLE IF NOT EXISTS caja (
     total_cortes REAL DEFAULT 0,
     diferencia REAL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS compras (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha DATETIME NOT NULL,
+    metodo_pago TEXT NOT NULL,
+    total REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS detalle_compras (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    compra_id INTEGER,
+    producto_id INTEGER,
+    producto TEXT,
+    cantidad INTEGER,
+    costo REAL,
+    subtotal REAL,
+    FOREIGN KEY (compra_id) REFERENCES compras(id)
+);
 ");
 
 $cols = $db->query("PRAGMA table_info(ventas)")->fetchAll(PDO::FETCH_COLUMN, 1);
@@ -79,4 +98,9 @@ if (!in_array("cliente_nombre", $cols)) {
 }
 if (!in_array("estado", $cols)) {
     $db->exec("ALTER TABLE ventas ADD COLUMN estado TEXT NOT NULL DEFAULT 'PAGADO'");
+}
+
+$prodCols = $db->query("PRAGMA table_info(productos)")->fetchAll(PDO::FETCH_COLUMN, 1);
+if (!in_array("stock", $prodCols)) {
+    $db->exec("ALTER TABLE productos ADD COLUMN stock INTEGER NOT NULL DEFAULT 0");
 }

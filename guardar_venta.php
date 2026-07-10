@@ -21,12 +21,24 @@ try {
     ]);
     $venta_id = $db->lastInsertId();
 
+    $checkStock = $db->prepare("SELECT stock FROM productos WHERE id = :id");
+    $updStock = $db->prepare("UPDATE productos SET stock = stock - :cantidad WHERE id = :id");
+
     $stmt = $db->prepare("
         INSERT INTO detalle_ventas (venta_id, producto_id, producto, precio, cantidad, subtotal)
         VALUES (:venta_id, :producto_id, :producto, :precio, :cantidad, :subtotal)
     ");
 
     foreach ($data["carrito"] as $item) {
+        $checkStock->execute([":id" => $item["id"]]);
+        $row = $checkStock->fetch(PDO::FETCH_ASSOC);
+        $stockActual = $row ? intval($row["stock"]) : 0;
+        if ($stockActual < $item["cantidad"]) {
+            throw new Exception("Stock insuficiente para: " . $item["producto"] . " (disponible: $stockActual)");
+        }
+
+        $updStock->execute([":cantidad" => $item["cantidad"], ":id" => $item["id"]]);
+
         $descuento = isset($item["descuento"]) ? floatval($item["descuento"]) : 0;
         $precio_final = floatval($item["precio"]) - $descuento;
         $subtotal = $precio_final * $item["cantidad"];
