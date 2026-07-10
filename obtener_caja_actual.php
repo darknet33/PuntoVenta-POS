@@ -5,7 +5,11 @@ $stmt = $db->query("SELECT * FROM caja WHERE estado = 'ABIERTA' ORDER BY id DESC
 $caja = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($caja) {
-    $hoy = $caja["fecha_inicio"];
+    $hoy = str_replace('T', ' ', $caja['fecha_inicio']);
+
+if (strlen($hoy) == 16) {
+    $hoy .= ':00';
+}
 
     $stmt = $db->prepare("SELECT COALESCE(SUM(total), 0) FROM ventas WHERE fecha >= :hoy AND metodo_pago = 'EFECTIVO'");
     $stmt->execute([":hoy" => $hoy]);

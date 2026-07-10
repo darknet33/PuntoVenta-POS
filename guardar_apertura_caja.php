@@ -4,7 +4,10 @@ include("config.php");
 $data = json_decode(file_get_contents("php://input"), true);
 
 $id = $data["id"] ?? null;
-$fecha_inicio = $data["fecha_inicio"];
+$fecha_inicio = date(
+    "Y-m-d H:i:s",
+    strtotime($data["fecha_inicio"])
+);
 $turno = $data["turno"];
 $encargado = $data["encargado"];
 $monto_inicial = floatval($data["monto_inicial"] ?? 0);
