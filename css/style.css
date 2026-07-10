@@ -655,7 +655,8 @@ table tbody tr:last-child td {
   color: var(--text-primary);
 }
 
-.modal-content input {
+.modal-content input,
+.modal-content select {
   margin-bottom: 12px;
 }
 
