@@ -510,17 +510,31 @@ function cargarGuardas() {
     .then(r => r.json())
     .then(data => {
       let html = "";
+      let filtro = document.getElementById("filtroEstado")?.value || "TODOS";
       data.forEach(g => {
+        let estadoActual = g.estado || "PENDIENTE";
+        if (filtro !== "TODOS" && estadoActual !== filtro) return;
+
+        let badgeCls = estadoActual.toLowerCase() === "entregado" ? "entregado" : "pendiente";
+        let btnEntregar = estadoActual === "PENDIENTE"
+          ? `<button class="btn btn-sm btn-success" onclick="entregarGuarda(${g.id})">Entregar</button>`
+          : "";
+
         html += `<tr>
           <td>${g.id}</td>
           <td>${g.nombre_completo}</td>
           <td>${g.cedula_identidad}</td>
+          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${g.equipaje}">${g.equipaje}</td>
           <td>${g.fecha_recojo}</td>
           <td>${g.monto} Bs</td>
           <td>${g.metodo_pago}</td>
+          <td><span class="caja-badge ${badgeCls}">${estadoActual}</span></td>
           <td>
-            <button class="btn btn-sm btn-primary" onclick="verDetalleGuarda(${g.id})">Ver</button>
-            <button class="btn btn-sm btn-danger" onclick="eliminarGuarda(${g.id})">Eliminar</button>
+            <div style="display:flex;gap:4px;">
+              <button class="btn btn-sm btn-primary" onclick="verDetalleGuarda(${g.id})">Ver</button>
+              ${btnEntregar}
+              <button class="btn btn-sm btn-danger" onclick="eliminarGuarda(${g.id})">Eliminar</button>
+            </div>
           </td>
         </tr>`;
       });
@@ -562,6 +576,8 @@ function verDetalleGuarda(id) {
   fetch("obtener_guardas.php?id=" + id)
     .then(r => r.json())
     .then(g => {
+      let estadoActual = g.estado || "PENDIENTE";
+      let badgeCls = estadoActual.toLowerCase() === "entregado" ? "entregado" : "pendiente";
       let html = `<h3>Detalle de Guarda Equipaje</h3>
         <p><strong>Nombre:</strong> ${g.nombre_completo}</p>
         <p><strong>Cédula:</strong> ${g.cedula_identidad}</p>
@@ -569,9 +585,32 @@ function verDetalleGuarda(id) {
         <p><strong>Recojo:</strong> ${g.fecha_recojo}</p>
         <p><strong>Monto:</strong> ${g.monto} Bs</p>
         <p><strong>Método de pago:</strong> ${g.metodo_pago}</p>
+        <p><strong>Estado:</strong> <span class="caja-badge ${badgeCls}">${estadoActual}</span></p>
         <p><strong>Registrado:</strong> ${g.fecha_creacion}</p>`;
       document.getElementById("detalleGuarda").innerHTML = html;
     });
+}
+
+function entregarGuarda(id) {
+  if (!confirm("¿Marcar este equipaje como ENTREGADO?")) return;
+  fetch("entregar_guarda.php", {
+    method: "POST",
+    body: JSON.stringify({ id })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "ok") {
+        notify("Equipaje entregado con éxito", "success");
+        cargarGuardas();
+        let detailTitle = document.querySelector("#detalleGuarda h3");
+        if (detailTitle) {
+          verDetalleGuarda(id);
+        }
+      } else {
+        notify("Error al entregar equipaje", "error");
+      }
+    })
+    .catch(() => notify("Error de conexión", "error"));
 }
 
 function eliminarGuarda(id) {

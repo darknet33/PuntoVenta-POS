@@ -35,14 +35,17 @@ php -S localhost:8000
 Every change — new endpoint, DB column, feature, or config — must be documented in this file. If it would be useful for a future agent to know, write it down.
 
 ## Guarda Equipaje module (added 2026-07-04)
-- **View**: `guarda_equipaje.php` — form (nombre_completo, cedula_identidad, equipaje textarea, fecha_recojo datetime-local, monto, metodo_pago) + history table
+- **View**: `guarda_equipaje.php` — form (nombre_completo, cedula_identidad, equipaje textarea, fecha_recojo datetime-local, monto, metodo_pago) + history table with filters and details columns
 - **Endpoints**:
   - `guardar_guarda.php` — POST, JSON → INSERT INTO equipajes
   - `obtener_guardas.php` — GET, returns all rows (or single row if `?id=` param)
   - `eliminar_guarda.php` — POST, JSON → DELETE by id
-- **Table** `equipajes`: id, nombre_completo, cedula_identidad, equipaje (TEXT), fecha_recojo, monto, metodo_pago, fecha_creacion
+  - `entregar_guarda.php` — POST, JSON → UPDATE state to 'ENTREGADO' for specific luggage id
+- **Table** `equipajes`: id, nombre_completo, cedula_identidad, equipaje (TEXT), fecha_recojo, monto, metodo_pago, fecha_creacion, estado (TEXT NOT NULL DEFAULT 'PENDIENTE')
 - **Cierre de caja** (`obtener_resumen_caja.php`) now also sums equipaje payments by method (EFECTIVO/QR) for the current day.
-- **JS functions** in `app.js`: `cargarGuardas()`, `guardarGuarda()`, `verDetalleGuarda(id)`, `eliminarGuarda(id)`
+- **JS functions** in `app.js`: `cargarGuardas()`, `guardarGuarda()`, `verDetalleGuarda(id)`, `eliminarGuarda(id)`, `entregarGuarda(id)`
+- **Filters**: History table allows filtering by status (`TODOS`, `PENDIENTE`, `ENTREGADO`).
+
 
 ## Ventas — descuento, cliente y estado (added 2026-07-04)
 - **Descuento por producto**: cada item del carrito tiene un input `Dto: [__] Bs`. El `precio` que se guarda en `detalle_ventas` es `precio_base - descuento`. El `subtotal` se recalcula con el precio final.

@@ -1430,3 +1430,13 @@ table tbody tr:last-child td {
   display: flex;
 }
 
+.caja-badge.pendiente {
+  background: rgba(255, 179, 71, 0.15);
+  color: var(--warning);
+}
+
+.caja-badge.entregado {
+  background: rgba(0, 212, 170, 0.15);
+  color: var(--secondary);
+}
+

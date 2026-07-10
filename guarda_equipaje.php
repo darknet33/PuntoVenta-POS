@@ -45,9 +45,16 @@
   </div>
 
   <div class="panel">
-    <div class="guarda-header">
+    <div class="guarda-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
       <h2 style="margin:0;">Historial</h2>
-      <button class="btn btn-primary" onclick="cargarGuardas()">Actualizar</button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <select id="filtroEstado" onchange="cargarGuardas()" style="padding:6px 12px; border-radius:var(--radius-sm); border:1px solid var(--surface-border); background:var(--surface); color:var(--text); outline:none; font-family:inherit;">
+          <option value="TODOS">Todos</option>
+          <option value="PENDIENTE">Pendientes</option>
+          <option value="ENTREGADO">Entregados</option>
+        </select>
+        <button class="btn btn-primary" onclick="cargarGuardas()">Actualizar</button>
+      </div>
     </div>
     <div class="table-container">
       <table>
@@ -56,9 +63,11 @@
             <th>ID</th>
             <th>Nombre</th>
             <th>Cédula</th>
+            <th>Equipaje</th>
             <th>Recojo</th>
             <th>Monto</th>
             <th>Pago</th>
+            <th>Estado</th>
             <th>Acción</th>
           </tr>
         </thead>

@@ -108,3 +108,9 @@ if (!in_array("stock", $prodCols)) {
 if (!in_array("unidades_por_paquete", $prodCols)) {
     $db->exec("ALTER TABLE productos ADD COLUMN unidades_por_paquete INTEGER NOT NULL DEFAULT 1");
 }
+
+$eqCols = $db->query("PRAGMA table_info(equipajes)")->fetchAll(PDO::FETCH_COLUMN, 1);
+if (!in_array("estado", $eqCols)) {
+    $db->exec("ALTER TABLE equipajes ADD COLUMN estado TEXT NOT NULL DEFAULT 'PENDIENTE'");
+}
+
