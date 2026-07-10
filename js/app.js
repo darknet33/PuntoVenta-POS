@@ -220,11 +220,11 @@ function buscarProductos() {
           miniForm = `<div class="mini-form-paquete" onclick="event.stopPropagation()">
             <span>Cant. paquetes:</span>
             <input type="number" id="miniPaq_${p.id}" value="1" min="1" max="${Math.floor(p.stock / p.unidades_por_paquete)}">
-            <button class="btn btn-sm btn-primary" onclick="agregarCarritoPaquete(${JSON.stringify(p)}, document.getElementById('miniPaq_${p.id}').value)">Agregar</button>
+            <button class="btn btn-sm btn-primary" onclick='agregarCarritoPaquete(${JSON.stringify(p).replace(/'/g, "&#39;")}, document.getElementById("miniPaq_${p.id}").value)'>Agregar</button>
             <span class="mini-form-total" id="miniTotal_${p.id}">= ${p.unidades_por_paquete} uds</span>
           </div>`;
         }
-        let clickAttr = sinStock ? "" : (paqueteOn && esPaquete ? "" : `onclick='agregarCarrito(${JSON.stringify(p)})'`);
+        let clickAttr = sinStock ? "" : (paqueteOn && esPaquete ? "" : `onclick='agregarCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'`);
         html += `<div class="producto-card ${sinStock ? 'sin-stock' : ''} ${paqueteOn && esPaquete ? 'con-mini-form' : ''}" ${clickAttr}>
           <div class="producto-nombre">${p.producto}</div>
           <div class="producto-precio">${p.precio} Bs</div>
@@ -610,11 +610,11 @@ function buscarProductosCompra() {
           miniForm = `<div class="mini-form-paquete" onclick="event.stopPropagation()">
             <span>Cant. paquetes:</span>
             <input type="number" id="miniPaqCompra_${p.id}" value="1" min="1">
-            <button class="btn btn-sm btn-primary" onclick="agregarCarritoCompraPaquete(${JSON.stringify(p)}, document.getElementById('miniPaqCompra_${p.id}').value)">Agregar</button>
+            <button class="btn btn-sm btn-primary" onclick='agregarCarritoCompraPaquete(${JSON.stringify(p).replace(/'/g, "&#39;")}, document.getElementById("miniPaqCompra_${p.id}").value)'>Agregar</button>
             <span class="mini-form-total" id="miniTotalCompra_${p.id}">= ${p.unidades_por_paquete} uds</span>
           </div>`;
         }
-        let clickAttr = paqueteOn && esPaquete ? "" : `onclick='agregarCarritoCompra(${JSON.stringify(p)})'`;
+        let clickAttr = paqueteOn && esPaquete ? "" : `onclick='agregarCarritoCompra(${JSON.stringify(p).replace(/'/g, "&#39;")})'`;
         html += `<div class="producto-card ${paqueteOn && esPaquete ? 'con-mini-form' : ''}" ${clickAttr}>
           <div class="producto-nombre">${p.producto}</div>
           <div class="producto-precio">Stock: ${p.stock}</div>
@@ -644,12 +644,17 @@ function agregarCarritoCompra(p) {
   let item = carritoCompra.find(i => i.id == p.id);
   if (item) {
     item.cantidad++;
+    item.esPaquete = false;
+    item.paquetes = 0;
   } else {
     carritoCompra.push({
       id: p.id,
       producto: p.producto,
       cantidad: 1,
-      costo: 0
+      costo: 0,
+      unidades_por_paquete: p.unidades_por_paquete || 1,
+      esPaquete: false,
+      paquetes: 0
     });
   }
   renderCarritoCompra();
@@ -662,12 +667,18 @@ function agregarCarritoCompraPaquete(p, paquetes) {
   let item = carritoCompra.find(i => i.id == p.id);
   if (item) {
     item.cantidad += unidades;
+    if (item.esPaquete) {
+      item.paquetes += paquetes;
+    }
   } else {
     carritoCompra.push({
       id: p.id,
       producto: p.producto,
       cantidad: unidades,
-      costo: 0
+      costo: 0,
+      unidades_por_paquete: p.unidades_por_paquete,
+      esPaquete: true,
+      paquetes: paquetes
     });
   }
   renderCarritoCompra();
@@ -680,10 +691,13 @@ function renderCarritoCompra() {
   carritoCompra.forEach((p, index) => {
     let subtotal = p.costo * p.cantidad;
     total += subtotal;
+    let detalleCant = p.esPaquete
+      ? `Cant: ${p.cantidad} (${p.paquetes} paq. x${p.unidades_por_paquete})`
+      : `Cant: ${p.cantidad}`;
     html += `<div class="carrito-item">
       <div class="item-info">
         <span class="item-nombre">${p.producto}</span>
-        <span class="item-detalle">Cant: ${p.cantidad}</span>
+        <span class="item-detalle">${detalleCant}</span>
         <div class="item-descuento">
           <label>Costo:</label>
           <input type="number" class="descuento-input" value="${p.costo}"
