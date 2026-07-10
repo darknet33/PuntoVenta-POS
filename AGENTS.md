@@ -119,4 +119,6 @@ Every change — new endpoint, DB column, feature, or config — must be documen
 - **Carrito**: los items de paquete muestran `Cant: 24 (2 paq. x12) a 25 Bs`.
 - **CSS**: `.switch`, `.slider`, `.toggle-paquete`, `.mini-form-paquete`, `.producto-pack`, `.con-mini-form`.
 - **Corrección de comillas en onclick (2026-07-09)**: Se corrigió un error de sintaxis en `js/app.js` en las funciones `buscarProductos` y `buscarProductosCompra` donde al interpolar `JSON.stringify(p)` dentro de un atributo `onclick="..."` con comillas dobles, se rompía el parseo de HTML. Se reemplazó el atributo con comillas simples `'` y se escaparon las comillas simples internas del producto para evitar errores. También se agregaron detalles de empaque en la visualización del carrito de compras.
+- **Toggle visual del mini-formulario (2026-07-09)**: Se mejoró la interactividad cuando la opción de compra/venta por paquete está activa. Ahora, los mini-formularios de los productos con paquetes se ocultan por defecto en la grilla y se muestran al hacer clic sobre la tarjeta del producto, agregando la clase `.activo` al elemento.
+
 

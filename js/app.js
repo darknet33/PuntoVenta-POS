@@ -224,7 +224,7 @@ function buscarProductos() {
             <span class="mini-form-total" id="miniTotal_${p.id}">= ${p.unidades_por_paquete} uds</span>
           </div>`;
         }
-        let clickAttr = sinStock ? "" : (paqueteOn && esPaquete ? "" : `onclick='agregarCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'`);
+        let clickAttr = sinStock ? "" : (paqueteOn && esPaquete ? "onclick='this.classList.toggle(\"activo\")'" : `onclick='agregarCarrito(${JSON.stringify(p).replace(/'/g, "&#39;")})'`);
         html += `<div class="producto-card ${sinStock ? 'sin-stock' : ''} ${paqueteOn && esPaquete ? 'con-mini-form' : ''}" ${clickAttr}>
           <div class="producto-nombre">${p.producto}</div>
           <div class="producto-precio">${p.precio} Bs</div>
@@ -614,7 +614,7 @@ function buscarProductosCompra() {
             <span class="mini-form-total" id="miniTotalCompra_${p.id}">= ${p.unidades_por_paquete} uds</span>
           </div>`;
         }
-        let clickAttr = paqueteOn && esPaquete ? "" : `onclick='agregarCarritoCompra(${JSON.stringify(p).replace(/'/g, "&#39;")})'`;
+        let clickAttr = paqueteOn && esPaquete ? "onclick='this.classList.toggle(\"activo\")'" : `onclick='agregarCarritoCompra(${JSON.stringify(p).replace(/'/g, "&#39;")})'`;
         html += `<div class="producto-card ${paqueteOn && esPaquete ? 'con-mini-form' : ''}" ${clickAttr}>
           <div class="producto-nombre">${p.producto}</div>
           <div class="producto-precio">Stock: ${p.stock}</div>

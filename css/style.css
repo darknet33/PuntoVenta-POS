@@ -1410,10 +1410,23 @@ table tbody tr:last-child td {
 }
 
 .producto-card.con-mini-form {
-  cursor: default;
+  cursor: pointer;
 }
 
 .producto-card.con-mini-form:hover {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--primary-light);
 }
+
+.producto-card.con-mini-form.activo {
+  border-color: var(--primary);
+  background: rgba(108, 99, 255, 0.04);
+}
+
+.producto-card.con-mini-form .mini-form-paquete {
+  display: none;
+}
+
+.producto-card.con-mini-form.activo .mini-form-paquete {
+  display: flex;
+}
+
